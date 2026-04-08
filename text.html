@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hand Tracking Block AI</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #0f172a;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        /* Container Video & Canvas */
+        .container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #input_video {
+            display: none; /* Sembunyikan video mentah */
+        }
+
+        #output_canvas {
+            transform: scaleX(-1); /* Mirroring agar gerakan natural */
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 0;
+        }
+
+        /* UI Overlay */
+        .ui-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 15px 25px;
+            border-radius: 15px;
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .ui-panel h1 {
+            margin: 0;
+            font-size: 1.2rem;
+            letter-spacing: 1px;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9rem;
+            margin-top: 5px;
+            color: #38bdf8;
+        }
+
+        /* Loading Animation */
+        #loader {
+            position: absolute;
+            color: white;
+            font-size: 1.2rem;
+            text-align: center;
+        }
+
+        /* Penjelasan Logika Visual */
+        .instruction {
+            position: absolute;
+            bottom: 30px;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loader">Memulai Kamera & AI...</div>
+
+    <div class="ui-panel">
+        <h1>HAND TRACKER v1.0</h1>
+        <div class="status">
+            <span id="dot" style="height:10px; width:10px; background:#38bdf8; border-radius:50%; display:inline-block;"></span>
+            <span id="status-text">AI Aktif - Tunjukkan Telunjuk Anda</span>
+        </div>
+    </div>
+
+    <div class="container">
+        <video id="input_video"></video>
+        <canvas id="output_canvas"></canvas>
+        <div class="instruction">Arahkan jari telunjuk Anda ke layar</div>
+    </div>
+
+    <script type="module">
+        const videoElement = document.getElementById('input_video');
+        const canvasElement = document.getElementById('output_canvas');
+        const canvasCtx = canvasElement.getContext('2d');
+        const loader = document.getElementById('loader');
+
+        function onResults(results) {
+            // Hilangkan loader jika tangan sudah terdeteksi/kamera jalan
+            loader.style.display = "none";
+
+            // Atur ukuran canvas sesuai window
+            canvasElement.width = window.innerWidth;
+            canvasElement.height = window.innerHeight;
+
+            canvasCtx.save();
+            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+            
+            // Gambar frame video ke canvas (Opsional: hapus baris ini jika ingin background hitam saja)
+            canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
+
+            if (results.multiHandLandmarks) {
+                for (const landmarks of results.multiHandLandmarks) {
+                    
+                    /* Titik Landmark MediaPipe:
+                       8 = Index Finger Tip (Ujung Jari Telunjuk)
+                    */
+                    const indexFingerTip = landmarks[8];
+                    
+                    // Konversi koordinat normalisasi (0-1) ke koordinat Pixel
+                    const x = indexFingerTip.x * canvasElement.width;
+                    const y = indexFingerTip.y * canvasElement.height;
+
+                    // Gambar "Blok" / Kotak di ujung jari
+                    drawPointerBlock(x, y);
+                }
+            }
+            canvasCtx.restore();
+        }
+
+        function drawPointerBlock(x, y) {
+            const size = 50;
+            
+            // Bayangan Glow
+            canvasCtx.shadowBlur = 20;
+            canvasCtx.shadowColor = "#38bdf8";
+            
+            // Gambar Kotak Utama
+            canvasCtx.fillStyle = "rgba(56, 189, 248, 0.8)";
+            canvasCtx.beginPath();
+            // Round rect manual (atau rect biasa)
+            canvasCtx.roundRect(x - size/2, y - size/2, size, size, 10);
+            canvasCtx.fill();
+
+            // Outline Putih
+            canvasCtx.strokeStyle = "white";
+            canvasCtx.lineWidth = 3;
+            canvasCtx.stroke();
+        }
+
+        const hands = new Hands({
+            locateFile: (file) => {
+                return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+            }
+        });
+
+        hands.setOptions({
+            maxNumHands: 1,
+            modelComplexity: 1,
+            minDetectionConfidence: 0.5,
+            minTrackingConfidence: 0.5
+        });
+
+        hands.onResults(onResults);
+
+        const camera = new Camera(videoElement, {
+            onFrame: async () => {
+                await hands.send({image: videoElement});
+            },
+            width: 1280,
+            height: 720
+        });
+        
+        camera.start();
+    </script>
+</body>
+</html>

